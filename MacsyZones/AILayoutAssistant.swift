@@ -43,6 +43,9 @@ struct AILayoutProposal {
     @Guide(description: "A short name for the layout, e.g. 'Coding + Chat'")
     var layoutName: String
 
+    @Guide(description: "True only if the user explicitly asked for overlapping zones or said overlap is okay")
+    var userWantsOverlap: Bool
+
     @Guide(description: "The zones of the layout")
     var zones: [AIZoneSpec]
 }
@@ -90,8 +93,10 @@ class AILayoutAssistant: ObservableObject {
             Zones must stay within the screen: x + width must not exceed 100, and y + height must not exceed 100.
             Adjacent zones must share edges exactly. For example "editor on the left two thirds, terminal top right, notes bottom right" means:
             Editor x=0 y=0 width=67 height=100, Terminal x=67 y=0 width=33 height=50, Notes x=67 y=50 width=33 height=50.
-            Zones may overlap only when they are meant as alternative placements for the same area.
-            Unless the user asks otherwise, the zones together should cover the whole screen without gaps.
+            By default zones must not overlap: unless the user asks otherwise, zones together should cover the whole screen exactly, with no gaps and no overlap.
+            When the user asks to resize one zone, recompute the neighboring zones so everything still tiles exactly.
+            For example, making the middle of three equal columns twice as wide as the others means widths 25, 50, 25 — not 33, 66, 33.
+            However, if the user explicitly asks for overlapping zones or says overlap is okay, overlap them exactly as requested; overlapping zones are also fine as alternative placements for the same area.
             Keep layouts practical: 2 to 8 zones is typical.
             When the user asks for changes, update your previous layout accordingly and return the full layout again.
             """)
@@ -121,13 +126,15 @@ class AILayoutAssistant: ObservableObject {
     var proposalZoneSpecs: [ZoneSpec] {
         guard let proposal else { return [] }
 
-        return proposal.zones.map {
+        let specs = proposal.zones.map {
             ZoneSpec(name: $0.name,
                      x: CGFloat($0.x),
                      y: CGFloat($0.y),
                      width: CGFloat($0.width),
                      height: CGFloat($0.height))
         }
+
+        return proposal.userWantsOverlap ? specs : ZoneSpec.repairTiling(specs)
     }
 }
 

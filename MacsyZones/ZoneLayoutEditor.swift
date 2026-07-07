@@ -40,6 +40,54 @@ struct ZoneSpec: Identifiable {
         y = (1 - sectionConfig.yPercentage - sectionConfig.heightPercentage) * 100
     }
 
+    // Repairs the common failure mode of generated layouts: a row of
+    // full-height columns (or a stack of full-width rows) whose sizes
+    // don't add up to the whole screen. Proportional normalization
+    // keeps the intended ratios (e.g. 33/66/33 becomes 25/50/25).
+    // Anything more complex than a single row or column is left alone.
+    static func repairTiling(_ zones: [ZoneSpec]) -> [ZoneSpec] {
+        guard zones.count > 1 else { return zones }
+
+        let full: CGFloat = 100
+        let tolerance: CGFloat = 2
+
+        let areColumns = zones.allSatisfy { abs($0.height - full) <= tolerance && abs($0.y) <= tolerance }
+        if areColumns {
+            let totalWidth = zones.map { $0.width }.reduce(0, +)
+            if totalWidth > 0 && abs(totalWidth - full) > tolerance {
+                var x: CGFloat = 0
+                return zones.sorted { $0.x < $1.x }.map { zone in
+                    var fixed = zone
+                    fixed.x = x
+                    fixed.y = 0
+                    fixed.width = zone.width / totalWidth * full
+                    fixed.height = full
+                    x += fixed.width
+                    return fixed
+                }
+            }
+        }
+
+        let areRows = zones.allSatisfy { abs($0.width - full) <= tolerance && abs($0.x) <= tolerance }
+        if areRows {
+            let totalHeight = zones.map { $0.height }.reduce(0, +)
+            if totalHeight > 0 && abs(totalHeight - full) > tolerance {
+                var y: CGFloat = 0
+                return zones.sorted { $0.y < $1.y }.map { zone in
+                    var fixed = zone
+                    fixed.x = 0
+                    fixed.y = y
+                    fixed.width = full
+                    fixed.height = zone.height / totalHeight * full
+                    y += fixed.height
+                    return fixed
+                }
+            }
+        }
+
+        return zones
+    }
+
     func toSectionConfig(number: Int) -> SectionConfig {
         let xFraction = min(max(x, 0), 99) / 100
         let yTopFraction = min(max(y, 0), 99) / 100
