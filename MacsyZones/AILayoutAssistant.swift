@@ -46,6 +46,9 @@ struct AILayoutProposal {
     @Guide(description: "True only if the user explicitly asked for overlapping zones or said overlap is okay")
     var userWantsOverlap: Bool
 
+    @Guide(description: "True only if the user asked for gaps, gutters, margins, or spacing between zones")
+    var userWantsGaps: Bool
+
     @Guide(description: "The zones of the layout")
     var zones: [AIZoneSpec]
 }
@@ -97,6 +100,10 @@ class AILayoutAssistant: ObservableObject {
             When the user asks to resize one zone, recompute the neighboring zones so everything still tiles exactly.
             For example, making the middle of three equal columns twice as wide as the others means widths 25, 50, 25 — not 33, 66, 33.
             However, if the user explicitly asks for overlapping zones or says overlap is okay, overlap them exactly as requested; overlapping zones are also fine as alternative placements for the same area.
+            Likewise, if the user asks for gaps, gutters, margins, or spacing between zones, leave the spacing they asked for (1 to 3 percent is typical when they don't give a number).
+            A gap or gutter is empty space between zones, never a zone itself — do not create zones named "Gutter" or "Gap".
+            To leave gutters, shrink the zones so their edges do not touch. For example three equal columns with 2 percent gutters means:
+            Column 1 x=0 y=0 width=32 height=100, Column 2 x=34 y=0 width=32 height=100, Column 3 x=68 y=0 width=32 height=100.
             Keep layouts practical: 2 to 8 zones is typical.
             When the user asks for changes, update your previous layout accordingly and return the full layout again.
             """)
@@ -134,7 +141,11 @@ class AILayoutAssistant: ObservableObject {
                      height: CGFloat($0.height))
         }
 
-        return proposal.userWantsOverlap ? specs : ZoneSpec.repairTiling(specs)
+        if proposal.userWantsOverlap || proposal.userWantsGaps {
+            return specs
+        }
+
+        return ZoneSpec.repairTiling(specs)
     }
 }
 
