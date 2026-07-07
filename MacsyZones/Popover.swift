@@ -345,6 +345,13 @@ struct Main: View {
                                     .frame(height: buttonHeight)
                             }
 
+                            Button(action: { stopEditing(); page = "editZones" }) {
+                                Image(systemName: "textformat.123")
+                                    .frame(height: buttonHeight)
+                            }
+                            .disabled(layouts.currentLayout.layoutType == .grid)
+                            .help("Edit zone positions and sizes by numbers")
+
                             Button(action: { stopEditing(); page = "rename" }) {
                                 Image(systemName: "rectangle.and.pencil.and.ellipsis")
                                     .frame(height: buttonHeight)
@@ -359,6 +366,12 @@ struct Main: View {
                                 Image(systemName: "plus")
                                     .frame(height: buttonHeight)
                             }
+
+                            Button(action: { stopEditing(); page = "aiLayout" }) {
+                                Image(systemName: "sparkles")
+                                    .frame(height: buttonHeight)
+                            }
+                            .help("Design a new layout by chatting with Apple Intelligence")
 
                             Button(action: { layouts.removeCurrentLayout() }) {
                                 Image(systemName: "trash")
@@ -1302,6 +1315,10 @@ struct TrayPopupView: View {
                     DuplicateView(page: $page, layoutName: generateUniqueDuplicateName())
                 case "editGrid":
                     GridEditorView(page: $page)
+                case "editZones":
+                    ZoneEditorView(page: $page)
+                case "aiLayout":
+                    AILayoutView(page: $page)
                 case "unlock":
                     UnlockProView(proLock: proLock, page: $page)
                 default:

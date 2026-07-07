@@ -574,18 +574,36 @@ class UserLayouts: UserData, ObservableObject {
     }
     
     func createLayout(name: String) {
+        createLayout(name: name, sectionConfigs: [SectionConfig.defaultSection])
+    }
+
+    func createLayout(name: String, sectionConfigs: [SectionConfig]) {
         stopEditing()
         currentLayout.hideAllWindows()
 
         if layouts.keys.contains(name) { return }
+        if sectionConfigs.isEmpty { return }
 
-        let newLayout = UserLayout(name: name, sectionConfigs: [SectionConfig.defaultSection])
+        let newLayout = UserLayout(name: name, sectionConfigs: sectionConfigs)
         layouts[name] = newLayout
 
         currentLayoutName = name
         spaceLayoutPreferences.setCurrent(layoutName: name)
 
         userLayouts.save()
+    }
+
+    func replaceZoneConfigs(for layoutName: String, with sectionConfigs: [SectionConfig]) {
+        guard let layout = layouts[layoutName], layout.layoutType == .zone else { return }
+        guard !sectionConfigs.isEmpty else { return }
+
+        stopEditing()
+        layout.hideAllWindows()
+        layout.layoutWindow.closeAllWindows()
+
+        layouts[layoutName] = UserLayout(name: layoutName, sectionConfigs: sectionConfigs)
+
+        save()
     }
 
     func createGridLayout(name: String, rows: Int, columns: Int) {
