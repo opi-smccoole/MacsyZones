@@ -41,10 +41,10 @@ struct ZoneSpec: Identifiable {
     }
 
     func toSectionConfig(number: Int) -> SectionConfig {
-        let widthFraction = min(max(width, 1), 100) / 100
-        let heightFraction = min(max(height, 1), 100) / 100
         let xFraction = min(max(x, 0), 99) / 100
         let yTopFraction = min(max(y, 0), 99) / 100
+        let widthFraction = min(min(max(width, 1), 100) / 100, 1 - xFraction)
+        let heightFraction = min(min(max(height, 1), 100) / 100, 1 - yTopFraction)
 
         return SectionConfig(number: number,
                              widthPercentage: widthFraction,
@@ -263,8 +263,7 @@ struct ZoneEditorView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             ZoneLayoutPreview(zones: previewZones)
-                .aspectRatio(screenSize.width / screenSize.height, contentMode: .fit)
-                .frame(width: 260)
+                .frame(width: 260, height: 260 * screenSize.height / screenSize.width)
 
             ScrollView {
                 VStack(spacing: 8) {

@@ -87,6 +87,9 @@ class AILayoutAssistant: ObservableObject {
             You design window layouts for MacsyZones, a macOS window tiling utility.
             A layout is a set of rectangular zones on one screen; the user drags windows onto zones to snap them there.
             All zone values are integer percentages of the screen: x is measured from the left edge, y from the top edge.
+            Zones must stay within the screen: x + width must not exceed 100, and y + height must not exceed 100.
+            Adjacent zones must share edges exactly. For example "editor on the left two thirds, terminal top right, notes bottom right" means:
+            Editor x=0 y=0 width=67 height=100, Terminal x=67 y=0 width=33 height=50, Notes x=67 y=50 width=33 height=50.
             Zones may overlap only when they are meant as alternative placements for the same area.
             Unless the user asks otherwise, the zones together should cover the whole screen without gaps.
             Keep layouts practical: 2 to 8 zones is typical.
@@ -252,8 +255,7 @@ struct AILayoutChatView: View {
                     Divider()
 
                     ZoneLayoutPreview(zones: assistant.proposalZoneSpecs)
-                        .aspectRatio(screenSize.width / screenSize.height, contentMode: .fit)
-                        .frame(width: 220)
+                        .frame(width: 220, height: 220 * screenSize.height / screenSize.width)
 
                     HStack(spacing: 6) {
                         TextField("Layout Name", text: $layoutName)
